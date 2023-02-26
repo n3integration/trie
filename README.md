@@ -1,6 +1,7 @@
-# trieregex
+# trie
 
-`trieregex` builds compact regular expressions from code points stored within a trie.
+`trie` provides a generic trie implementation capable of building compact 
+regular expressions from code points stored within the data structure.
 
 ### Usage
 
@@ -8,32 +9,33 @@
 package main
 
 import (
-  "log"
-	
-  "github.com/n3integration/trieregex"
+	"log"
+
+	"github.com/n3integration/trie"
 )
 
 func main() {
-  trie := trieregex.NewTrie()
-  trie.Add("ham")
-  trie.Add("spam")
-  trie.Add("spearfish")
+	t := trie.NewSet()
+	t.Add("ham", struct{}{})
+	t.Add("spam", struct{}{})
+	t.Add("spearfish", struct{}{})
 
-  re, err := trie.ToRegex()
-  if err != nil {
-    // handle err
-  }
+	re, err := t.ToRegex()
+	if err != nil {
+		// handle err
+	}
 
-  if re.String() == `^(?:ham|sp(?:am|earfish))$` {
-    log.Println(`🎉`)
-  }
+	if re.String() == `^(?:ham|sp(?:am|earfish))$` {
+		log.Println(`🎉`)
+	}
 }
+
 ```
 
 ##### License
 
 ```text
-   Copyright 2022 n3integration
+   Copyright 2023 n3integration
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

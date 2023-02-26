@@ -1,82 +1,79 @@
-package trieregex
+package trie
 
 import (
-	"errors"
-	"fmt"
-	"regexp"
-	"sort"
-	"strings"
+	"reflect"
 )
 
-// Trie provides a basic retrieval structure that can hold any valid series of runes
-type Trie struct {
-	nodes map[rune]*Trie
+// Trie provides a basic retrieval structure that can hold any valid series
+// of runes
+type Trie[T comparable] struct {
+	nodes map[rune]*Trie[T]
+	value T
 }
 
-// NewTrie initializes an empty trie data structure
-func NewTrie() *Trie {
-	return &Trie{}
+// New initializes an empty trie data structure
+func New[T comparable]() *Trie[T] {
+	return &Trie[T]{}
 }
 
-// Add stores a string within the underlying data structure
-func (t *Trie) Add(text string) {
+// NewSet returns a trie set
+func NewSet() *Trie[struct{}] {
+	return &Trie[struct{}]{}
+}
+
+// Add stores the key/value within the trie; returns true if a previous value
+// is overwritten; false, otherwise
+func (t *Trie[T]) Add(key string, value T) bool {
+	if len(key) == 0 {
+		return false
+	}
+
 	current := t
-	for _, r := range text {
+	for _, r := range key {
 		node, ok := current.nodes[r]
 		if !ok {
 			if current.nodes == nil {
-				current.nodes = map[rune]*Trie{}
+				current.nodes = map[rune]*Trie[T]{}
 			}
-			node = new(Trie)
+			node = new(Trie[T])
 			current.nodes[r] = node
 		}
 		current = node
 	}
+
+	previous := current.value
+	current.value = value
+	return previous != value
 }
 
-// ToRegex converts the underlying trie structure into a regular expression
-func (t *Trie) ToRegex() (*regexp.Regexp, error) {
-	if len(t.nodes) == 0 {
-		return nil, errors.New("trie is empty")
-	}
-
-	rePattern := t.Pattern()
-	return regexp.Compile(fmt.Sprintf("^%s$", rePattern))
-}
-
-// Pattern exposes the trie's regular expression fragment as a string
-func (t *Trie) Pattern() string {
-	if len(t.nodes) == 0 {
-		return ""
-	}
-	if len(t.nodes) == 1 {
-		key := t.keys()[0]
-		return fmt.Sprintf("%s%s", regexp.QuoteMeta(string(key)), t.nodes[key].Pattern())
-	}
-
-	sequences := make([]string, 0)
-	for key, trie := range t.nodes {
-		sequences = append(sequences, fmt.Sprintf("%s%s", regexp.QuoteMeta(string(key)), trie.Pattern()))
-	}
-
-	if len(sequences) == 1 {
-		return sequences[0]
-	}
-	subsequence := strings.Join(sequences, "")
-	if len(sequences) == len(subsequence) {
-		return fmt.Sprintf("[%s]", subsequence)
-	}
-	sort.Slice(sequences, func(i, j int) bool {
-		diff := strings.Compare(sequences[i], sequences[j])
-		if diff == 0 {
-			return len(sequences[i]) < len(sequences[j])
+// Get the value associated with the provided key; otherwise, return the empty
+// value if not found
+func (t *Trie[T]) Get(key string) (val T, vOK bool) {
+	current := t
+	for _, r := range key {
+		node, ok := current.nodes[r]
+		if !ok {
+			return val, false
 		}
-		return diff < 0
-	})
-	return fmt.Sprintf("(?:%s)", strings.Join(sequences, "|"))
+		current = node
+	}
+	return current.value, true
 }
 
-func (t *Trie) keys() []rune {
+// Len returns the total number of nodes
+func (t *Trie[T]) Len() int {
+	if len(t.nodes) == 0 || !reflect.ValueOf(t.value).IsZero() {
+		return 1
+	}
+
+	count := 0
+	for _, trie := range t.nodes {
+		count += trie.Len()
+	}
+	return count
+}
+
+func (t *Trie[T]) keys() []rune {
 	var keys []rune
 	for key := range t.nodes {
 		keys = append(keys, key)
