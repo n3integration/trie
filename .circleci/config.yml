@@ -23,7 +23,7 @@ jobs:
       # Replace this with steps to deploy to users
       - aws-cli/setup:
           role-arn: 'arn:aws:iam::${AWS_ACCOUNT}:role/CircleCIActionsRole'
-          aws-region: "${AWS_REGION}"
+          aws-region: ${AWS_REGION}
           profile-name: "OIDC-PROFILE"
           role-session-name: "circle-ci-integration"
           session-duration: "60"
