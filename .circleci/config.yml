@@ -26,7 +26,7 @@ jobs:
           aws-region: AWS_REGION
           profile-name: "OIDC-PROFILE"
           role-session-name: "circle-ci-integration"
-          session-duration: "60"
+          session-duration: "900"
       - run:
           name: whoami
           command: |
